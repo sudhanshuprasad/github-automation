@@ -2,6 +2,7 @@
 
 A scheduled GitHub Actions workflow that automatically increments a counter in this repository's README and logs each run.
 
+This is built to make your github profile look more active then it actually is.
 ## What this does
 
 This repo runs a workflow (`.github/workflows/increment-readme.yml`) on a schedule via GitHub Actions. On each trigger, it:
