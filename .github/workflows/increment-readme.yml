@@ -49,6 +49,7 @@ jobs:
           echo "Planned commits today: $num_commits"
 
       - name: Log this run
+        if: steps.decide.outputs.num_commits != '0'
         run: |
           timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           num_commits=${{ steps.decide.outputs.num_commits }}
