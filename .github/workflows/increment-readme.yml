@@ -1,0 +1,102 @@
+name: Increment README Counter (Realistic Pattern)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # runs 4x/day; actual activity is decided by the logic below
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  increment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Decide activity level for today
+        id: decide
+        run: |
+          day_of_week=$(date +%u)  # 1=Mon ... 7=Sun
+
+          if [ "$day_of_week" -ge 6 ]; then
+            # Weekend: 30% chance of activity, 1-2 commits
+            if [ $(( RANDOM % 100 )) -lt 30 ]; then
+              num_commits=$(( (RANDOM % 2) + 1 ))
+            else
+              num_commits=0
+            fi
+          else
+            # Weekday: 85% chance of activity, 1-6 commits
+            if [ $(( RANDOM % 100 )) -lt 85 ]; then
+              num_commits=$(( (RANDOM % 6) + 1 ))
+            else
+              num_commits=0
+            fi
+          fi
+
+          # Occasional burst day (10% chance)
+          if [ $(( RANDOM % 100 )) -lt 10 ]; then
+            num_commits=$(( num_commits + (RANDOM % 5) + 3 ))
+          fi
+
+          echo "num_commits=$num_commits" >> "$GITHUB_OUTPUT"
+          echo "Planned commits today: $num_commits"
+
+      - name: Log this run
+        run: |
+          timestamp=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          num_commits=${{ steps.decide.outputs.num_commits }}
+          run_id="${{ github.run_id }}"
+
+          if [ ! -f activity-log.md ]; then
+            echo "# Activity Log" > activity-log.md
+            echo "" >> activity-log.md
+            echo "| Timestamp (UTC) | Commits Made | Run ID |" >> activity-log.md
+            echo "|---|---|---|" >> activity-log.md
+          fi
+
+          echo "| $timestamp | $num_commits | $run_id |" >> activity-log.md
+
+          git add activity-log.md
+          git commit -m "chore: log run $timestamp"
+
+      - name: Make counter commits
+        if: steps.decide.outputs.num_commits != '0'
+        run: |
+          num_commits=${{ steps.decide.outputs.num_commits }}
+
+          messages=(
+            "chore: update counter"
+            "chore: bump count"
+            "docs: update README stats"
+            "chore: refresh tracking value"
+            "update: incremented counter"
+            "chore: sync counter state"
+            "docs: minor README update"
+            "chore: routine update"
+            "fix: counter adjustment"
+            "chore: daily maintenance update"
+            "docs: refresh metadata"
+            "chore: update stats"
+          )
+
+          for i in $(seq 1 $num_commits); do
+            current=$(grep -oP '(?<=Count: )\d+' README.md)
+            new=$((current + 1))
+            sed -i "s/Count: $current/Count: $new/" README.md
+
+            msg=${messages[$RANDOM % ${#messages[@]}]}
+
+            git add README.md
+            git commit -m "$msg"
+            sleep $(( RANDOM % 300 ))
+          done
+
+      - name: Push everything
+        run: git push
