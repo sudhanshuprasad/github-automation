@@ -44,7 +44,7 @@ Counter-update commits use a randomly selected message from a fixed pool (e.g. `
 
 1. **Add the counter line to `README.md`:**
    ```
-   Count: 80
+   Count: 81
    ```
 
 2. **Enable write permissions for Actions:**
